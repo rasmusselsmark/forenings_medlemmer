@@ -13,7 +13,7 @@ from members.views import (
     DepartmentSignView,
     paymentGatewayErrorView,
     volunteerSignup,
-    departmentView,
+    departments_iframeView,
     Activities,
     Membership,
     SupportMembership,
@@ -111,5 +111,5 @@ urlpatterns = [
     url(r"^activity/(?P<activity_id>[\d]+)/$", ActivitySignup, name="activity_view"),
     url(r"^quickpay_callback$", QuickpayCallback, name="quickpay_callback"),
     url(r"^department_signup$", DepartmentSignView, name="department_signup"),
-    url(r"^departments$", departmentView, name="department_view"),
+    url(r"^departments$", departments_iframeView, name="department_view"),
 ]

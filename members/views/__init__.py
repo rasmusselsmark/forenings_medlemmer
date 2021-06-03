@@ -13,7 +13,7 @@ from members.views.volunteerSignup import volunteerSignup
 from members.views.QuickpayCallback import QuickpayCallback
 from members.views.DepartmentSignView import DepartmentSignView
 from members.views.paymentGatewayErrorView import paymentGatewayErrorView
-from members.views.departmentView import departmentView
+from members.views.departmentsIframeView import departments_iframeView
 from members.views.Activities import Activities
 from members.views.Membership import Membership
 from members.views.SupportMembership import SupportMembership

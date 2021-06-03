@@ -5,7 +5,7 @@ from members.models import Department
 
 
 @xframe_options_exempt
-def departmentView(request, unique=None):
+def departments_iframeView(request, unique=None):
     return render(
         request,
         "members/department_list.html",
