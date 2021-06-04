@@ -26,19 +26,24 @@ def Activities(request):
     return render(request, "members/activities.html", context)
 
 
-def activity_lists(user):
+def activity_lists(user, department=None):
     family = user_to_person(user).family
     invites = ActivityInvite.objects.filter(
-        person__family=family, expire_dtm__gte=timezone.now(), rejected_dtm=None
+        person__family=family,
+        expire_dtm__gte=timezone.now(),
+        rejected_dtm=None,
+        **{"activity__department": department.id} if department else {},
     )
     open_activities = Activity.objects.filter(
         open_invite=True,
         signup_closing__gte=timezone.now(),
         activitytype__in=["FORLØB", "ARRANGEMENT"],
+        **{"department": department} if department else {},
     ).order_by("zipcode")
     participating = ActivityParticipant.objects.filter(
         member__person__family=family,
         activity__activitytype__in=["FORLØB", "ARRANGEMENT"],
+        **{"activity__department": department.id} if department else {},
     ).order_by("-activity__start_date")
     open_activities_with_persons = []
     # augment open invites with the persons who could join it in the family
