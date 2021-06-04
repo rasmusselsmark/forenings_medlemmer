@@ -64,6 +64,29 @@ TEMPLATES = [
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = env.str("SECRET_KEY")
 
+LOGGING = {
+    "version": 1,
+    # Version of logging
+    "disable_existing_loggers": False,
+    "formatters": {
+        "Simple_Format": {
+            "format": "{levelname} {message}",
+            "style": "{",
+        }
+    },
+    "handlers": {
+        "console": {
+            "formatter": "Simple_Format",
+            "class": "logging.StreamHandler",
+        },
+    },
+    "loggers": {
+        "django": {
+            "handlers": ["console"],
+            # "level": "DEBUG",
+        },
+    },
+}
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env.bool("DEBUG")
 if DEBUG:
