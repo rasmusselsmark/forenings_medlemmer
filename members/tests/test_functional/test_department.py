@@ -40,3 +40,23 @@ class DepartmentTest(StaticLiveServerTestCase):
             self.department_1.name,
             map(lambda e: e.text, self.browser.find_elements_by_xpath("//*")),
         )
+        self.assertGreater(
+            self.browser.page_source.index(self.department_1.responsible_name), 1
+        )
+        self.assertIn(
+            f"mailto:{self.department_1.department_email}",
+            map(
+                lambda e: e.get_attribute("href"),
+                self.browser.find_elements_by_xpath("//a"),
+            ),
+        )
+        self.assertGreater(
+            self.browser.page_source.index(self.department_1.open_hours), 1
+        )
+        self.assertIn(
+            self.department_1.website,
+            map(
+                lambda e: e.get_attribute("href"),
+                self.browser.find_elements_by_xpath("//a"),
+            ),
+        )
