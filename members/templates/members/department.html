@@ -2,44 +2,29 @@
 {% load static %}
 {% block content %}
 
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.2.0/dist/leaflet.css"/>
-    <script src="https://unpkg.com/leaflet@1.2.0/dist/leaflet.js"></script>
+    <h2>{{ department.name }}</h2>
+    <p>
+        Her kan du se informationer om {{ department.name }}.</p>
+    <p>{{ department.description }}
+    </p>
 
+    <ul>
+        <li>
+            <strong>Kontaktperson:</strong> {{ department.responsible_name }}, email: <a
+                href="mailto:{{ department.department_email }}">{{ department.department_email }}</a>
+        </li>
+        <li><strong>Adresse:</strong> {{ department.address }}</li>
+        <li>
+            <strong>Tidspunkt: </strong>
+            {{ department.open_hours }}
+        </li>
+        <li><strong>Hjemmeside:</strong>
+            {% if department.website != '' %}
+                <a href={{ department.website }} target="_blank">{{ department.name }}</a>
+            {% else %}
+                {{ department.name }}
+            {% endif %}
+        </li>
+    </ul>
 
-    <div id="department-{{ department.pk }}">
-        <ul>
-            <li>
-                <strong>Coding Pirates: </strong>
-                {% if department.website != '' %}
-                    <a href={{ department.website }} target="_blank">{{ department.name }}</a>
-                {% else %}
-                    {{ department.name }}
-                {% endif %}
-            </li>
-
-            <li><strong>Adresse:</strong> {{ department.address }}</li>
-
-            <li>
-                <strong>Afdelingsleder: </strong>
-                {% if department.department_leaders.all %}
-                    {{ department.department_leaders.all.0 }}
-                    {# TODO move to only department leaders once responsible_name is removed #}
-                {% else %}
-                    {{ department.responsible_name }}
-                {% endif %}
-            </li>
-
-            <li>
-                <strong>Email:</strong>
-                <a href="mailto:{{ department.department_email }}">
-                    {{ department.department_email }}
-                </a>
-            </li>
-
-            <li>
-                <strong>Tidspunkt: </strong>
-                {{ department.open_hours }}
-            </li>
-        </ul>
-    </div>
 {% endblock %}
