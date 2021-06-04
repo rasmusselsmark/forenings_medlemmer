@@ -13,7 +13,21 @@ from members.utils.user import user_to_person, has_user
 @login_required
 @user_passes_test(has_user, "/admin_signup/")
 def Activities(request):
-    family = user_to_person(request.user).family
+    family, invites, open_activities_with_persons, participating = activity_lists(
+        request.user
+    )
+
+    context = {
+        "family": family,
+        "invites": invites,
+        "participating": participating,
+        "open_activities": open_activities_with_persons,
+    }
+    return render(request, "members/activities.html", context)
+
+
+def activity_lists(user):
+    family = user_to_person(user).family
     invites = ActivityInvite.objects.filter(
         person__family=family, expire_dtm__gte=timezone.now(), rejected_dtm=None
     )
@@ -26,7 +40,6 @@ def Activities(request):
         member__person__family=family,
         activity__activitytype__in=["FORLØB", "ARRANGEMENT"],
     ).order_by("-activity__start_date")
-
     open_activities_with_persons = []
     # augment open invites with the persons who could join it in the family
     for curActivity in open_activities:
@@ -49,11 +62,4 @@ def Activities(request):
                     "persons": applicablePersons,
                 }
             )
-
-    context = {
-        "family": family,
-        "invites": invites,
-        "participating": participating,
-        "open_activities": open_activities_with_persons,
-    }
-    return render(request, "members/activities.html", context)
+    return family, invites, open_activities_with_persons, participating
