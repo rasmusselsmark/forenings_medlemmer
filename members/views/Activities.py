@@ -19,7 +19,7 @@ def Activities(request):
         "family": family,
         "invites": family_invites(family),
         "participating": participation(family),
-        "open_activities": activity_lists(family),
+        "open_activities": open_activities(family),
     }
     return render(request, "members/activities.html", context)
 
@@ -41,7 +41,7 @@ def participation(family, department=None):
     ).order_by("-activity__start_date")
 
 
-def activity_lists(family, department=None):
+def open_activities(family, department=None):
     open_activities = Activity.objects.filter(
         open_invite=True,
         signup_closing__gte=timezone.now(),
@@ -72,3 +72,34 @@ def activity_lists(family, department=None):
                 }
             )
     return open_activities_with_persons
+
+
+def all_activities(family, department=None):
+    all_activities = Activity.objects.filter(
+        activitytype__in=["FORLØB", "ARRANGEMENT"],
+        **{"department": department} if department else {},
+    ).order_by("zipcode")
+    # participating = participation(department, family)
+    all_activities_with_persons = []
+    # augment open invites with the persons who could join it in the family
+    for curActivity in all_activities:
+        applicablePersons = Person.objects.filter(
+            family=family,  # only members of this family
+            birthday__lte=timezone.now()
+            - datetime.timedelta(days=curActivity.min_age * 365),  # old enough
+            birthday__gt=timezone.now()
+            - datetime.timedelta(days=curActivity.max_age * 365),  # not too old
+        ).exclude(
+            member__activityparticipant__activity=curActivity
+        )  # not already participating
+
+        if applicablePersons.exists():
+            all_activities_with_persons.append(
+                {
+                    "id": curActivity.id,
+                    "name": curActivity.name,
+                    "department": curActivity.department,
+                    "persons": applicablePersons,
+                }
+            )
+    return all_activities_with_persons

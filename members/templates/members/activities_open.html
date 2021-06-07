@@ -1,0 +1,49 @@
+<section id="open_activities">
+  <h2>Åbne aktiviteter</h2>
+  {% if open_activities %}
+    <p>Denne liste indeholder åbne aktiviteter, hvor der er fri tilmelding</p>
+    <table>
+      <thead>
+        <tr>
+          <th>Afdeling</th>
+          <th>Aktivitet</th>
+          <th>Beskrivelse</th>
+          <th>Handling</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for activity in open_activities %}
+          <tr>
+            <td>
+              Coding Pirates {{activity.department.name}}
+            </td>
+            <td>{{activity.name}}</td>
+            <td>
+              <a
+                class="button"
+                href="{%url 'activity_view_family' activity.id %}"
+                target="_blank"
+              >
+                Læs mere
+              </a>
+            </td>
+            <td>
+              {% for person in activity.persons %}
+                <a
+                  class="button-success"
+                  href="{%url 'activity_signup' activity.id person.id %}"
+                >
+                  Tilmeld {{ person.firstname }} aktivitet
+                </a>
+              {% endfor %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <div class="info-box">
+      Der er ikke nogen aktiviteter.
+    </div>
+  {% endif %}
+</section>
