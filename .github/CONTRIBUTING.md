@@ -41,7 +41,7 @@ You are more than welcome to contribute to the system. This guide documents how 
 
     -   `docker-compose build` -- Builds the system.
     -   `docker-compose up` -- Starts the systems.
-    -   `docker-compose down && docker volume rm backend_database`
+    -   `docker-compose down && docker volume rm forenings_medlemmer_databas`
         \-- Deletes your local database
     -   `docker-compose run web command` -- Replace `command` with what you want
         to run in the system.
