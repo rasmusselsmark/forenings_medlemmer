@@ -1,15 +1,13 @@
 from django.shortcuts import render
 
 from members.models import Department
-from members.views.Activities import activity_lists
+from members.utils.user import user_to_person
+from members.views.Activities import activity_lists, family_invites, participation
 
 
 def departmentView(request, name):
+    family = user_to_person(request.user).family
     department = Department.objects.get(name=name)
-
-    family, invites, open_activities_with_persons, participating = activity_lists(
-        request.user, department
-    )
 
     return render(
         request,
@@ -17,8 +15,8 @@ def departmentView(request, name):
         {
             "department": department,
             "family": family,
-            "invites": invites,
-            "participating": participating,
-            "open_activities": open_activities_with_persons,
+            "invites": family_invites(family, department),
+            "participating": participation(family, department),
+            "open_activities": activity_lists(family, department),
         },
     )

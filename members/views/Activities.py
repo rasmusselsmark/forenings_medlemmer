@@ -13,38 +13,42 @@ from members.utils.user import user_to_person, has_user
 @login_required
 @user_passes_test(has_user, "/admin_signup/")
 def Activities(request):
-    family, invites, open_activities_with_persons, participating = activity_lists(
-        request.user
-    )
+    family = user_to_person(request.user).family
 
     context = {
         "family": family,
-        "invites": invites,
-        "participating": participating,
-        "open_activities": open_activities_with_persons,
+        "invites": family_invites(family),
+        "participating": participation(family),
+        "open_activities": activity_lists(family),
     }
     return render(request, "members/activities.html", context)
 
 
-def activity_lists(user, department=None):
-    family = user_to_person(user).family
-    invites = ActivityInvite.objects.filter(
+def family_invites(family, department=None):
+    return ActivityInvite.objects.filter(
         person__family=family,
         expire_dtm__gte=timezone.now(),
         rejected_dtm=None,
         **{"activity__department": department.id} if department else {},
     )
+
+
+def participation(family, department=None):
+    return ActivityParticipant.objects.filter(
+        member__person__family=family,
+        activity__activitytype__in=["FORLØB", "ARRANGEMENT"],
+        **{"activity__department": department.id} if department else {},
+    ).order_by("-activity__start_date")
+
+
+def activity_lists(family, department=None):
     open_activities = Activity.objects.filter(
         open_invite=True,
         signup_closing__gte=timezone.now(),
         activitytype__in=["FORLØB", "ARRANGEMENT"],
         **{"department": department} if department else {},
     ).order_by("zipcode")
-    participating = ActivityParticipant.objects.filter(
-        member__person__family=family,
-        activity__activitytype__in=["FORLØB", "ARRANGEMENT"],
-        **{"activity__department": department.id} if department else {},
-    ).order_by("-activity__start_date")
+    # participating = participation(department, family)
     open_activities_with_persons = []
     # augment open invites with the persons who could join it in the family
     for curActivity in open_activities:
@@ -67,4 +71,4 @@ def activity_lists(user, department=None):
                     "persons": applicablePersons,
                 }
             )
-    return family, invites, open_activities_with_persons, participating
+    return open_activities_with_persons
