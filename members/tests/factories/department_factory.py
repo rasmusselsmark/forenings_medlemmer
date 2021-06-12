@@ -5,7 +5,7 @@ from members.tests.factories.union_factory import UnionFactory
 from members.tests.factories.address_factory import AddressFactory
 from members.tests.factories.factory_helpers import (
     TIMEZONE,
-    datetime_after,
+    date_after,
 )
 
 
@@ -19,8 +19,8 @@ class DepartmentFactory(DjangoModelFactory):
     responsible_name = Faker("name")
     department_email = Faker("email")
     created = Faker("date_time", tzinfo=TIMEZONE)
-    updated_dtm = LazyAttribute(lambda d: datetime_after(d.created))
-    closed_dtm = LazyAttribute(lambda d: datetime_after(d.created))
+    updated_dtm = LazyAttribute(lambda d: date_after(d.created))
+    closed_dtm = LazyAttribute(lambda d: date_after(d.created))
     isVisible = Faker("boolean")
     isOpening = Faker("boolean")
     website = Faker("url")

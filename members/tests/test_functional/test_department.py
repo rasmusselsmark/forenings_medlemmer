@@ -1,6 +1,6 @@
 import os
 import socket
-from datetime import timedelta
+from datetime import timedelta, date
 
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from django.utils import timezone
@@ -14,6 +14,7 @@ from members.tests.factories import (
     ActivityParticipantFactory,
     MemberFactory,
 )
+from members.tests.factories.factory_helpers import TIMEZONE
 from members.tests.test_functional.functional_helpers import log_in
 
 """
@@ -41,6 +42,8 @@ class DepartmentTest(StaticLiveServerTestCase):
         )
         self.member = MemberFactory.create(department=self.department)
 
+        past_date = date.today() + timedelta(days=-100)
+        one_day = timedelta(days=1)
         self.activities = {}
         for dep in [self.department, self.other_department]:
             self.activities[dep.name] = {}
@@ -51,31 +54,55 @@ class DepartmentTest(StaticLiveServerTestCase):
                 "STØTTEMEDLEMSKAB",
             ]:
                 self.activities[dep.name][activity_type] = {}
-                for variant in ["participate", "recent", "old"]:
-                    self.activities[dep.name][activity_type][
-                        variant
-                    ] = ActivityFactory.create(
-                        open_invite=True,
-                        min_age=5,
-                        max_age=90,
-                        department=dep,
-                        signup_closing=(
-                            Faker("past_date", start_date="-10d")
-                            if variant == "old"
-                            else Faker("future_datetime", end_date="+100d")
-                        ),
-                        name=f"{dep.name}-{activity_type}-{variant}",
-                        activitytype_id=activity_type,
-                    )
-                    if variant == "participate":
-                        ActivityParticipantFactory.create(
-                            activity=self.activities[dep.name][activity_type][variant],
-                            member=self.member,
-                        )
+                for open in [True, False]:
+                    self.activities[dep.name][activity_type][open] = {}
+                    for end_date in ["active", "historic"]:
+                        self.activities[dep.name][activity_type][open][end_date] = {}
+                        for variant in ["participate", "recent", "signup_due"]:
+                            self.activities[dep.name][activity_type][open][end_date][
+                                variant
+                            ] = ActivityFactory.create(
+                                open_invite=open,
+                                min_age=5,
+                                max_age=90,
+                                department=dep,
+                                signup_closing=(
+                                    past_date
+                                    if (
+                                        variant == "signup_due"
+                                        or end_date == "historic"
+                                    )
+                                    else past_date + timedelta(days=200)
+                                ),
+                                start_date=past_date + timedelta(days=-200),
+                                end_date=(
+                                    past_date + one_day
+                                    if end_date == "historic"
+                                    else Faker(
+                                        "future_date", end_date="+100d", tzinfo=TIMEZONE
+                                    )
+                                ),
+                                name=f"{dep}-{activity_type}-{open}-{end_date}-{variant}",
+                                activitytype_id=activity_type,
+                            )
+                            if variant == "participate":
+                                print(
+                                    f"participating in {self.activities[dep.name][activity_type][open][end_date][variant]}"
+                                )
+                                ActivityParticipantFactory.create(
+                                    activity=self.activities[dep.name][activity_type][
+                                        open
+                                    ][end_date][variant],
+                                    member=self.member,
+                                )
+                            past_date += one_day + one_day
 
         self.browser = webdriver.Remote(
             "http://selenium:4444/wd/hub", DesiredCapabilities.CHROME
         )
+        log_in(self, self.member.person)
+        # Loads the department resource
+        self.browser.get(f"{self.live_server_url}/departments/{self.department.name}")
 
     def tearDown(self):
         if not os.path.exists("test-screens"):
@@ -84,9 +111,6 @@ class DepartmentTest(StaticLiveServerTestCase):
         self.browser.quit()
 
     def test_department(self):
-        log_in(self, self.member.person)
-        # Loads the department resource
-        self.browser.get(f"{self.live_server_url}/departments/{self.department.name}")
         self.assertIn(
             self.department.name,
             map(lambda e: e.text, self.browser.find_elements_by_xpath("//*")),
@@ -112,36 +136,113 @@ class DepartmentTest(StaticLiveServerTestCase):
             ),
         )
 
+    def test_participation(self):
+        print(self.browser.page_source)
         # Check that the page contains all participating activities
-        activity_names = [
-            e.text
-            for e in self.browser.find_elements_by_xpath(
-                "//section[@id='participation']/table/tbody/tr/td[@data-label='Aktivitet']"
-            )
-        ]
-        self.assertEqual(2, len(activity_names))
-        self.assertIn(
-            self.activities[self.department.name]["ARRANGEMENT"]["participate"].name,
-            activity_names,
+        activities = self.browser.find_elements_by_xpath(
+            "//section[@id='participation']/table/tbody/tr"
         )
-        self.assertIn(
-            self.activities[self.department.name]["FORLØB"]["participate"].name,
-            activity_names,
+        self.assertEqual(8, len(activities))
+        self.assertEqual(
+            self.activities[self.department.name]["FORLØB"][False]["historic"][
+                "participate"
+            ].name,
+            activities[0].find_element_by_xpath("td[@data-label='Aktivitet']").text,
+        )
+        self.assertEqual(
+            self.activities[self.department.name]["FORLØB"][False]["active"][
+                "participate"
+            ].name,
+            activities[1].find_element_by_xpath("td[@data-label='Aktivitet']").text,
+        )
+        self.assertEqual(
+            self.activities[self.department.name]["FORLØB"][True]["historic"][
+                "participate"
+            ].name,
+            activities[2].find_element_by_xpath("td[@data-label='Aktivitet']").text,
+        )
+        self.assertEqual(
+            self.activities[self.department.name]["FORLØB"][True]["active"][
+                "participate"
+            ].name,
+            activities[3].find_element_by_xpath("td[@data-label='Aktivitet']").text,
+        )
+        self.assertEqual(
+            self.activities[self.department.name]["ARRANGEMENT"][False]["historic"][
+                "participate"
+            ].name,
+            activities[4].find_element_by_xpath("td[@data-label='Aktivitet']").text,
+        )
+        self.assertEqual(
+            self.activities[self.department.name]["ARRANGEMENT"][False]["active"][
+                "participate"
+            ].name,
+            activities[5].find_element_by_xpath("td[@data-label='Aktivitet']").text,
+        )
+        self.assertEqual(
+            self.activities[self.department.name]["ARRANGEMENT"][True]["historic"][
+                "participate"
+            ].name,
+            activities[6].find_element_by_xpath("td[@data-label='Aktivitet']").text,
+        )
+        self.assertEqual(
+            self.activities[self.department.name]["ARRANGEMENT"][True]["active"][
+                "participate"
+            ].name,
+            activities[7].find_element_by_xpath("td[@data-label='Aktivitet']").text,
         )
 
+    def test_open_activities(self):
         # Check that the page contains all activities
-        activity_names = [
-            e.text
-            for e in self.browser.find_elements_by_xpath(
-                "//section[@id='open_activities']/table/tbody/tr/td[@data-label='Aktivitet']"
-            )
-        ]
-        self.assertEqual(2, len(activity_names))
-        self.assertIn(
-            self.activities[self.department.name]["ARRANGEMENT"]["recent"].name,
-            activity_names,
+        activities = self.browser.find_elements_by_xpath(
+            "//section[@id='open_activities']/table/tbody/tr"
         )
-        self.assertIn(
-            self.activities[self.department.name]["FORLØB"]["recent"].name,
-            activity_names,
+        self.assertEqual(8, len(activities))
+        self.assertEqual(
+            self.activities[self.department.name]["ARRANGEMENT"][True]["active"][
+                "signup_due"
+            ].name,
+            activities[0].find_element_by_xpath("td[@data-label='Aktivitet']").text,
+        )
+        self.assertEqual(
+            self.activities[self.department.name]["ARRANGEMENT"][False]["active"][
+                "signup_due"
+            ].name,
+            activities[1].find_element_by_xpath("td[@data-label='Aktivitet']").text,
+        )
+        self.assertEqual(
+            self.activities[self.department.name]["FORLØB"][True]["active"][
+                "signup_due"
+            ].name,
+            activities[2].find_element_by_xpath("td[@data-label='Aktivitet']").text,
+        )
+        self.assertEqual(
+            self.activities[self.department.name]["FORLØB"][False]["active"][
+                "signup_due"
+            ].name,
+            activities[3].find_element_by_xpath("td[@data-label='Aktivitet']").text,
+        )
+        self.assertEqual(
+            self.activities[self.department.name]["ARRANGEMENT"][True]["active"][
+                "recent"
+            ].name,
+            activities[4].find_element_by_xpath("td[@data-label='Aktivitet']").text,
+        )
+        self.assertEqual(
+            self.activities[self.department.name]["ARRANGEMENT"][False]["active"][
+                "recent"
+            ].name,
+            activities[5].find_element_by_xpath("td[@data-label='Aktivitet']").text,
+        )
+        self.assertEqual(
+            self.activities[self.department.name]["FORLØB"][True]["active"][
+                "recent"
+            ].name,
+            activities[6].find_element_by_xpath("td[@data-label='Aktivitet']").text,
+        )
+        self.assertEqual(
+            self.activities[self.department.name]["FORLØB"][False]["active"][
+                "recent"
+            ].name,
+            activities[7].find_element_by_xpath("td[@data-label='Aktivitet']").text,
         )

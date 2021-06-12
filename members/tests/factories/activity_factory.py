@@ -1,15 +1,16 @@
+from datetime import date
+
 import factory
 from members.tests.factories.factory_helpers import TIMEZONE, LOCALE
 from members.tests.factories.providers import DanishProvider, CodingPiratesProvider
 from members.models import Activity
 from members.tests.factories.union_factory import UnionFactory
 from members.tests.factories.department_factory import DepartmentFactory
-from django.utils import timezone
 from factory import Faker, SubFactory, LazyAttribute
 from factory.django import DjangoModelFactory
 from members.tests.factories.factory_helpers import (
-    datetime_after,
-    datetime_before,
+    date_after,
+    date_before,
 )
 
 
@@ -21,11 +22,11 @@ Faker._DEFAULT_LOCALE = "dk_DK"
 class ActivityFactory(DjangoModelFactory):
     class Meta:
         model = Activity
-        exclude = ("active", "now")
+        exclude = ("active", "today")
 
     # Helper fields
     active = Faker("boolean")
-    now = timezone.now()
+    today = date.today()
 
     union = SubFactory(UnionFactory)
     department = SubFactory(DepartmentFactory, union=factory.SelfAttribute("..union"))
@@ -43,16 +44,14 @@ class ActivityFactory(DjangoModelFactory):
     dawa_id = Faker("uuid4")
     description = Faker("text")
     instructions = Faker("text")
-    signup_closing = Faker(
-        "date_time_between", tzinfo=TIMEZONE, start_date="-100d", end_date="+100d"
-    )
+    signup_closing = Faker("date_between", start_date="-100d", end_date="+100d")
     start_date = LazyAttribute(
-        lambda d: datetime_before(d.now)
+        lambda d: date_before(d.today)
         if d.active
-        else Faker("date_time", tzinfo=TIMEZONE).generate({})
+        else Faker("date_object").generate({})
     )
     end_date = LazyAttribute(
-        lambda d: datetime_after(d.now) if d.active else datetime_before(d.now)
+        lambda d: date_after(d.today) if d.active else date_before(d.today)
     )
     updated_dtm = Faker("date_time", tzinfo=TIMEZONE)
     open_invite = Faker("boolean")

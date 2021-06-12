@@ -11,9 +11,9 @@ TIMEZONE = pytz.timezone(settings.TIME_ZONE)
 # Faker._DEFAULT_LOCALE = LOCALE
 
 
-def datetime_before(datetime):
-    return datetime - timedelta(days=random.randint(1, 4 * 365))
+def date_before(date):
+    return date - timedelta(days=random.randint(1, 4 * 365))
 
 
-def datetime_after(datetime):
-    return datetime + timedelta(days=random.randint(1, 4 * 365))
+def date_after(date):
+    return date + timedelta(days=random.randint(1, 4 * 365))
