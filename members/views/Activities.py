@@ -19,7 +19,7 @@ def Activities(request):
         "family": family,
         "invites": family_invites(family),
         "participating": participation(family),
-        "open_activities": open_activities(family),
+        "activities": open_activities(family),
     }
     return render(request, "members/activities.html", context)
 
@@ -77,8 +77,9 @@ def open_activities(family, department=None):
 def all_activities(family, department=None):
     all_activities = Activity.objects.filter(
         activitytype__in=["FORLØB", "ARRANGEMENT"],
+        end_date__gte=timezone.now(),
         **{"department": department} if department else {},
-    ).order_by("zipcode")
+    ).order_by("signup_closing", "start_date")
     # participating = participation(department, family)
     all_activities_with_persons = []
     # augment open invites with the persons who could join it in the family

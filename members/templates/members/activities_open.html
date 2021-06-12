@@ -1,6 +1,6 @@
 <section id="open_activities">
   <h2>Åbne aktiviteter</h2>
-  {% if open_activities %}
+  {% if activities %}
     <p>Denne liste indeholder åbne aktiviteter, hvor der er fri tilmelding</p>
     <table>
       <thead>
@@ -12,7 +12,7 @@
         </tr>
       </thead>
       <tbody>
-        {% for activity in open_activities %}
+        {% for activity in activities %}
           <tr>
             <td>
               Coding Pirates {{activity.department.name}}

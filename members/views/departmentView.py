@@ -21,6 +21,6 @@ def departmentView(request, name):
             "family": family,
             "invites": family_invites(family, department),
             "participating": participation(family, department),
-            "all_activities": all_activities(family, department),
+            "activities": all_activities(family, department),
         },
     )
